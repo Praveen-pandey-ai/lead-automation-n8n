@@ -1,0 +1,340 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -32
+      ],
+      "id": "1e566ef3-0e93-4030-b512-d4451a88f515",
+      "name": "Webhook",
+      "webhookId": "c0fb3984-891e-419b-9215-a4ff6cd79efa"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the incoming webhook body\nconst body = $input.first().json.body;\n\n// Required fields\nconst requiredFields = [\"name\", \"email\", \"message\", \"urgency\", \"product\"];\n\n// Email validation regex\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n\n// Simple spam keywords\nconst spamKeywords = [\"free money\", \"bitcoin\", \"win cash\", \"click here\"];\n\n// Collect validation errors\nlet errors = [];\n\n// Check required fields\nfor (const field of requiredFields) {\n  if (!body[field]) {\n    errors.push(`Missing required field: ${field}`);\n  }\n}\n\n// Validate email format\nif (body.email && !emailRegex.test(body.email)) {\n  errors.push(\"Invalid email format\");\n}\n\n// Spam detection\nconst messageLower = (body.message || \"\").toLowerCase();\nif (spamKeywords.some(word => messageLower.includes(word))) {\n  errors.push(\"Spam content detected\");\n}\n\n// Attach validation results\nbody.isValid = errors.length === 0;\nbody.validationErrors = errors;\n\n// Return modified item\nreturn [{ json: body }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        -32
+      ],
+      "id": "f16f42be-64a0-4a21-9316-8d6f3534e452",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7fee58a7-92d3-4d62-a092-1a6ccac34e50",
+              "leftValue": "={{$json.isValid}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -80,
+        -32
+      ],
+      "id": "214ff18c-aaef-4f43-bd95-1eb2b58a1f09",
+      "name": "Is Valid Lead?"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1j-mp8w3VQNsLWHT_Mb-Lf3-6aVNtFwU0MTFte7biJY8",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1j-mp8w3VQNsLWHT_Mb-Lf3-6aVNtFwU0MTFte7biJY8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1j-mp8w3VQNsLWHT_Mb-Lf3-6aVNtFwU0MTFte7biJY8/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{$json.email}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        128,
+        -48
+      ],
+      "id": "6871dd88-422e-4d30-8d36-4cd6ae70e341",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RaTKJy8G4hnq3E8j",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a16c5c23-1f96-4dbb-8e9a-33c4db253e4c",
+              "leftValue": "={{ $items(\"Get row(s) in sheet\").length == 0 }}\n",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        288,
+        -48
+      ],
+      "id": "7dfbb5c1-e72a-451b-8312-88ecba05a430",
+      "name": "If",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1j-mp8w3VQNsLWHT_Mb-Lf3-6aVNtFwU0MTFte7biJY8",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1j-mp8w3VQNsLWHT_Mb-Lf3-6aVNtFwU0MTFte7biJY8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1j-mp8w3VQNsLWHT_Mb-Lf3-6aVNtFwU0MTFte7biJY8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{$json.name}}",
+            "email": "={{$json.email}}",
+            "company": "={{$json.company}}",
+            "message": "={{$json.message}}",
+            "urgency": "={{$json.urgency}}",
+            "product": "={{$json.product}}",
+            "created_at": "={{ new Date().toISOString() }}\n",
+            "status": "new"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product",
+              "displayName": "product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        544,
+        -64
+      ],
+      "id": "50a56c3d-4d39-4268-9457-721989811853",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RaTKJy8G4hnq3E8j",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Is Valid Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid Lead?": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "7aee1131-a934-4334-8049-45b3748e2ebb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99e6a7b8857be6c3d374c0e213d4b7099423e4eef5c0c01748b8408cf306e0d6"
+  },
+  "id": "4iEUIwJku5OF3TOuxQ7zG",
+  "tags": []
+}
